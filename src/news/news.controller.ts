@@ -1,16 +1,29 @@
-import { Controller, Post, Body } from '@nestjs/common';
-import { NewsApiService } from 'src/news-api/news-api.service';
-import { OpenAiService } from 'src/open-ai/open-ai.service';
+import { Controller, Post, Body, Get } from '@nestjs/common';
+import { NewsService } from './news.service';
+import { NewsDto } from 'src/news.dto/news.dto';
 
 @Controller('news')
 export class NewsController {
     constructor(
-        private readonly openAiService: OpenAiService,
-        private readonly newsApiService: NewsApiService,
+        private readonly newsService: NewsService,
       ) {}
     
-      @Post('search')
-      async search(@Body('prompt') prompt: string): Promise<any> {
-        // 
+      @Get('search')
+      async search(@Body('keywords') keywords: string): Promise<any> {
+        const searchResults = await this.newsService.searchByKeywords(keywords);
+        return searchResults;
+      }
+
+      @Get('pure')
+      async depoliticizeNews(@Body('keywords') keywords: string): Promise<string[]> {
+        try {
+          const searchResults = await this.newsService.searchByKeywords(keywords);
+          const editedArticles = await this.newsService.pureArticles(searchResults);
+          return editedArticles;
+
+        } catch (error) {
+          console.log('Error occured while depoliticizing news:', error);
+          throw error;
+        }
       }
 }
